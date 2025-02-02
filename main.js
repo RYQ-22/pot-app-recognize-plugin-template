@@ -13,8 +13,8 @@ async function recognize(base64, lang, options) {
 
     let res = await tauriFetch('https://api.ocr.space/parse/image', {
         method: "POST",
-        header: {
-            apikey,
+        headers: {
+            "apikey": apikey,
             "content-type": "application/x-www-form-urlencoded"
         },
         body: {
@@ -28,22 +28,14 @@ async function recognize(base64, lang, options) {
     })
 
     if (res.ok) {
-        const { result } = res.data;
-        const { ErrorMessage, ParsedResults } = result;
-        if (ErrorMessage) {
-            throw ErrorMessage;
-        }
-        if (ParsedResults) {
-            let target = "";
-            for (let i in ParsedResults) {
-                const { ParsedText } = i;
-                target += ParsedText;
-            }
-            return target;
+        const data = res.data;
+        if (data && data.ParsedResults && data.ParsedResults.length > 0) {
+            let parsedText = data.ParsedResults[0].ParsedText; // 直接从第一个结果获取 ParsedText
+            return parsedText; // 返回解析出的文本
         } else {
-            throw JSON.stringify(result);
+            throw "No parsed results available";
         }
     } else {
-        throw JSON.stringify(res);
-    }
+        throw `Http Request Error\nHttp Status: ${res.status}\n${JSON.stringify(res.data)}`;
+    }       
 }
